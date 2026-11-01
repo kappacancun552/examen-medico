@@ -797,6 +797,7 @@ const SECTIONS = [
  { id:'estudios', t:'Estudios complementarios', icon:'🧪', special:'studies', note:'Sugeridos por exposición y hallazgos (no por costumbre). Registre el estado de cada uno.' },
  { id:'dictamen', t:'Análisis y dictamen', icon:'✅', special:'dictamen' },
 ];
+SECTIONS.find(s=>s.id==='app').items.forEach(it=>{ if(it.t==='yn'){ it.det=1; it.detReq=1; } }); // APP: el "Sí" exige detalle
 
 const STUDIES = [
   ['audiometria','Audiometría tonal (14–16 h de reposo auditivo)', S=>has(S,'ruido')||pos(S,'app_audicion'), 'Exposición a ruido (NOM-011-STPS-2001)'],
@@ -831,6 +832,7 @@ function bp(s,d,S){ if(!s||!d) return {i:'Capture ambas cifras'}; const crit=has
   if(s<90||d<60) return {s:1,i:'Hipotensión'};
   return {i:'Normal'}; }
 function visual(S){ const ix=x=>VA.indexOf(x); const o=[S.a.va_od,S.a.va_oi].filter(x=>x&&x!=='No evaluado'); if(!o.length) return null;
+  if(S.a.va_od==='20/20'&&S.a.va_oi==='20/20') return {v:'20/20 ambos ojos'+(S.a.va_lentes==='Con lentes'?' (corregida)':''),i:'Sin alteración'};
   const w=Math.max(...o.map(ix)), crit=hasAny(S,VIS), lab=VA[w]+(S.a.va_lentes==='Con lentes'?' (corregida)':'');
   if(w>=7) return {v:'Peor ojo '+lab,s:crit?3:2,i:'Baja visión importante',rx:'Sin conducción ni maquinaria; valoración oftalmológica'};
   if(w>=4) return {v:'Peor ojo '+lab,s:crit?2:1,i:'Agudeza visual disminuida (> 20/40)',rx:'Uso obligatorio de corrección óptica; optometría'};
@@ -878,7 +880,8 @@ function evalItem(it){
   else if(v==null||v==='') return null;
   else if(it.t==='yn'){ r= v==='Sí'?{s:it.s??1,i:it.p||'Positivo',flag:it.flag}:{s:0,i:it.n||'Negado'}; if(v==='Sí'&&S.a[it.id+'_det']) r.ans='Sí — '+S.a[it.id+'_det']; }
   else if(it.t==='seg'){ r= v==='Alterado'?{s:it.s??1,i:'Alterado: '+(S.a[it.id+'_n']||'sin descripción')}:{s:0,i:v==='Normal'?'Sin alteraciones':'No evaluado'}; }
-  else if(it.t==='opt'){ const o=it.o.find(x=>(x.v??x)===v); r=typeof o==='object'?{s:o.s||0,i:o.i??'',flag:o.flag}:{s:0,i:''}; if(it.man&&v==='Positivo') r.i=it.p; }
+  else if(it.t==='opt'){ const o=it.o.find(x=>(x.v??x)===v); r=typeof o==='object'?{s:o.s||0,i:o.i??'',flag:o.flag}:{s:0,i:''}; if(it.man&&v==='Positivo'){ r.i=it.p; const n=(S.a[it.id+'_n']||'').trim(); if(n) r.ans='Positivo — '+n; }
+    if((it.id==='va_od'||it.id==='va_oi')&&S.a.va_od==='20/20'&&S.a.va_oi==='20/20') r.i='Sin alteración'; }
   else if(it.t==='num'){ r=it.f?it.f(+v,S):{}; r.ans=v+' '+(it.unit||''); }
   else r={s:0,i:''};
   let sev=r.s||0;
@@ -969,8 +972,8 @@ function itemHTML(it){
   const e=it.t!=='h'?evalItem(it):null, pill=e&&(e.interp||e.sev)?`<div class="pill s${e.flag?4:e.sev}" data-for="${it.id}">${esc(e.interp)}</div>`:`<div class="pill" data-for="${it.id}"></div>`;
   switch(it.t){
   case 'h': return `<h3 class="sub">${esc(it.q)}</h3>`;
-  case 'yn': return `<div class="it yn${miss}"><label>${esc(it.q)}${req}</label><div class="bt2">${['Sí','No'].map(o=>`<button class="ob ${v===o?'on '+(o==='Sí'&&it.s!==0?'y':'n'):''}" data-id="${it.id}" data-v="${o}">${o}</button>`).join('')}</div>${it.det&&v==='Sí'?`<input class="in sm" data-in="${it.id}_det" placeholder="Detalle / fecha / motivo" value="${esc(S.a[it.id+'_det']||'')}">`:''}${v==='Sí'&&e?.interp?pill:''}</div>`;
-  case 'opt': return `<div class="it${miss}"><label>${esc(it.q)}${req}</label><div class="bts c${it.cols||Math.min(it.o.length,4)}">${it.o.map(o=>{const ov=o.v??o; return `<button class="ob ${v===ov?'on':''}" data-id="${it.id}" data-v="${esc(ov)}">${esc(o.l?ov+' · '+o.l:ov)}${it.big&&o.i?`<small>${esc(o.i)}</small>`:''}</button>`}).join('')}</div>${e&&e.sev?pill:''}</div>`;
+  case 'yn': return `<div class="it yn${miss}"><label>${esc(it.q)}${req}</label><div class="bt2">${['Sí','No'].map(o=>`<button class="ob ${v===o?'on '+(o==='Sí'&&it.s!==0?'y':'n'):''}" data-id="${it.id}" data-v="${o}">${o}</button>`).join('')}</div>${it.det&&v==='Sí'?`<input class="in sm" data-in="${it.id}_det" placeholder="${it.detReq?'¿Por qué sí? Detalle diagnóstico, fecha y tratamiento':'Detalle / fecha / motivo'}" value="${esc(S.a[it.id+'_det']||'')}">`:''}${v==='Sí'&&e?.interp?pill:''}</div>`;
+  case 'opt': return `<div class="it${miss}"><label>${esc(it.q)}${req}</label><div class="bts c${it.cols||Math.min(it.o.length,4)}">${it.o.map(o=>{const ov=o.v??o; return `<button class="ob ${v===ov?'on':''}" data-id="${it.id}" data-v="${esc(ov)}">${esc(o.l?ov+' · '+o.l:ov)}${it.big&&o.i?`<small>${esc(o.i)}</small>`:''}</button>`}).join('')}</div>${it.man&&v==='Positivo'?`<input class="in sm" data-in="${it.id}_n" placeholder="Describa el tipo de hallazgo (lado, grado, localización)" value="${esc(S.a[it.id+'_n']||'')}">`:''}${e&&e.sev?pill:''}</div>`;
   case 'seg': return `<div class="it${miss}"><label>${esc(it.q)}${req}</label><div class="bts c3">${['Normal','Alterado','No evaluado'].map(o=>`<button class="ob ${v===o?'on '+(o==='Alterado'?'y':''):''}" data-id="${it.id}" data-v="${o}">${o}</button>`).join('')}</div>${v==='Alterado'?`<input class="in sm" data-in="${it.id}_n" placeholder="Describa el hallazgo" value="${esc(S.a[it.id+'_n']||'')}">`:''}</div>`;
   case 'multi': return `<div class="it"><label>${esc(it.q)}</label><div class="bts c3">${it.o.map(o=>`<button class="ob ${(v||[]).includes(o)?'on y':''}" data-multi="${it.id}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}<button class="ob ${v&&!v.length?'on':''}" data-multi="${it.id}" data-v="__none">Ninguno</button></div>${pill}</div>`;
   case 'num': return `<div class="it num${miss}"><label>${esc(it.q)}${req}</label><div class="nrow"><input class="in" type="number" inputmode="decimal" step="any" data-in="${it.id}" value="${esc(v??'')}"><span class="u">${esc(it.unit||'')}</span></div>${pill}</div>`;
@@ -1056,7 +1059,7 @@ document.addEventListener('click',async e=>{ const b=e.target.closest('button,[d
      newAfter:()=>{ VIEW='home'; render(); }
   })[act]?.(); });
 function lastEval(){ try{ return JSON.parse(localStorage.getItem('care_eval'))||{}; }catch(e){ return {}; } }
-function missingReq(k){ return visibleItems(SECTIONS[k]).filter(it=>it.req&&(S.a[it.id]==null||S.a[it.id]===''||it.id==='acronimo'&&S.a.acronimo.length<2)); }
+function missingReq(k){ return visibleItems(SECTIONS[k]).filter(it=>it.req&&(S.a[it.id]==null||S.a[it.id]===''||it.id==='acronimo'&&S.a.acronimo.length<2)||it.detReq&&S.a[it.id]==='Sí'&&!(S.a[it.id+'_det']||'').trim()).map(it=>it.detReq&&S.a[it.id]==='Sí'?{...it,q:it.q+' (detalle del Sí)'}:it); }
 function goStep(k){ if(k<0||k>=SECTIONS.length) return;
   if(k>S.step){ for(let j=S.step;j<k;j++){ const m=missingReq(j); if(m.length){ S.step=j; S.tried=j; renderExam(); return toast('Complete: '+m.map(x=>x.q).join(', ')); } }
     if(S.a.consentimiento==='No'){ return toast('Sin consentimiento informado no puede continuar el examen.'); } }
@@ -1159,7 +1162,7 @@ function para(d,text,o={}){ d.setFont('helvetica',o.bold?'bold':'normal'); d.set
 function dictBox(d,r){ const dd=r.data.d;
   T(d,{body:[[{content:'DICTAMEN',styles:{fontSize:7.5,textColor:C.navy,fontStyle:'bold',cellPadding:{top:6,left:8,right:8,bottom:0}}}],
     [{content:tx(r.final),styles:{fontSize:15,textColor:C.navy,fontStyle:'bold',cellPadding:{top:2,left:8,right:8,bottom:2}}}],
-    [{content:tx(dd.aval==='Sí'?'Recomendación del agente avalada por el evaluador.':`Recomendación del agente: ${r.A.lvl.l}. Modificada por el evaluador. Justificación: ${dd.just||''}`),styles:{fontSize:7.5,cellPadding:{top:2,left:8,right:8,bottom:7}}}]],
+    ...(dd.aval==='Sí'?[]:[[{content:tx(`Recomendación del agente: ${r.A.lvl.l}. Modificada por el evaluador. Justificación: ${dd.just||''}`),styles:{fontSize:7.5,cellPadding:{top:2,left:8,right:8,bottom:7}}}]])],
     styles:{fillColor:LVLFILL[r.A.lvl.c],lineWidth:0}}); }
 function signs(d,r,withWorker=true){ const a=r.data.a, s=r.data.sig, n=withWorker?2:1, gap=12, bw=withWorker?(CW-gap)/2:CW*0.55, bh=118; room(d,bh+24);
   const boxes=[{img:s.evaluador,t:'ELABORADO POR',l:[`${a.evaluador||''}${a.cedula?' · Céd. '+a.cedula:''}`,`${a.rol||''}${a.medico_valida?' · Valida: '+a.medico_valida:''}`]}];
@@ -1198,7 +1201,7 @@ async function buildPdf(r){ const d=newDoc(), a=r.data.a, dd=r.data.d;
   band(d,'ESTUDIOS COMPLEMENTARIOS');
   T(d,{head:[['Estudio','Estado','Resultado','Motivo']],columnStyles:{0:{cellWidth:190},1:{cellWidth:80},2:{cellWidth:150}},
     body:rowsTx(st.length?st.map(s=>{const x=r.data.studies[s[0]]||{}; return [s[1],{content:x.e||'Sugerido sin registrar',styles:x.e==='Alterado'?{fillColor:SEVFILL[2]}:{}},s[0]==='antidoping'&&x.panel?adSummary(x):(x.r||'—'),s[3]]}):[[{content:'Sin estudios indicados',colSpan:4}]])});
-  band(d,'ANÁLISIS DEL AGENTE CLÍNICO (APOYO A LA DECISIÓN)',C.green);
+  band(d,'ANÁLISIS DEL AGENTE CLÍNICO',C.green);
   T(d,{head:[['Sección','Hallazgo e interpretación','Nivel']],columnStyles:{0:{cellWidth:130},2:{cellWidth:90}},
     body:rowsTx(r.A.F.length?r.A.F.map(f=>[f.sec,f.q+': '+f.i+(f.rel?` (pertinente al puesto: ${f.rel.map(c=>CHIP_LABEL[c]).join(', ')})`:''),{content:SEVTXT[f.sev],styles:{fillColor:SEVFILL[f.sev]}}]):[[{content:'Sin hallazgos que limiten el puesto',colSpan:3}]])});
   if(r.A.edt) para(d,'Sospecha de enfermedad de trabajo: documentar exposición, referir a Medicina del Trabajo y orientar a su UMF del IMSS (ST-9). La sospecha clínica no equivale a calificación médico-legal.',{bold:true,size:8,color:C.red});
