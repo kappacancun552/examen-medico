@@ -547,6 +547,42 @@ const PROFILES = [
   ['otro','Otro (seleccionar riesgos manualmente)',[]]
 ];
 
+// Catálogo Nacional de Ocupaciones (STPS, áreas del formato DC-3). Cada puesto: [nombre, perfil de riesgo].
+const OTRO='Otro (describa)';
+const CNO = [
+ ['01 Cultivo, crianza y aprovechamiento',[['Jornalero agrícola','jardineria'],['Operador de tractor o maquinaria agrícola','maquinaria'],['Aplicador de agroquímicos / fumigador','jardineria'],['Trabajador de granja o ganadería','jardineria'],['Pescador / acuicultor','jardineria'],['Trabajador forestal / motosierrista','jardineria']]],
+ ['02 Extracción y suministro',[['Operador de maquinaria de extracción (minas, canteras, bancos)','maquinaria'],['Perforador / barrenero','construccion'],['Trabajador de planta de refinación o beneficio','soldador'],['Electricista de líneas o subestaciones','electrico'],['Operador de planta de tratamiento de agua','limpieza'],['Fontanero de redes de agua','construccion']]],
+ ['03 Construcción',[['Residente / supervisor de obra','construccion'],['Albañil / oficial de albañilería','construccion'],['Ayudante general de obra / peón','construccion'],['Carpintero de obra negra / cimbrero','construccion'],['Fierrero / armador','construccion'],['Operador de maquinaria pesada','maquinaria'],['Soldador / pailero','soldador'],['Pintor / impermeabilizador','pintor'],['Yesero / tablaroquero / acabados','construccion'],['Instalador eléctrico','electrico'],['Plomero / instalador hidrosanitario','construccion'],['Montador de estructuras / trabajo en altura','altura']]],
+ ['04 Tecnología',[['Mecánico industrial o automotriz','electrico'],['Electricista industrial','electrico'],['Técnico en electrónica','admin'],['Técnico en informática / soporte','admin'],['Técnico en telecomunicaciones (torres y antenas)','altura'],['Técnico de mantenimiento general','electrico'],['Técnico de aire acondicionado y refrigeración','electrico']]],
+ ['05 Procesamiento y fabricación',[['Operador de producción / línea de ensamble','almacen'],['Operador de máquina industrial','maquinaria'],['Soldador / herrero','soldador'],['Panadero / operador de alimentos industrial','cocina'],['Costurero / operador textil','almacen'],['Carpintero / ebanista','construccion'],['Operador de procesos químicos','pintor'],['Impresor / operador de prensa','maquinaria']]],
+ ['06 Transporte',[['Chofer de autotransporte de carga','conductor'],['Chofer de personal o turismo','conductor'],['Operador de montacargas','conductor'],['Ayudante de carga y descarga','almacen'],['Marinero / capitán de embarcación','seguridad'],['Personal de tierra aeroportuario','maquinaria'],['Despachador / logística','admin']]],
+ ['07 Provisión de bienes y servicios',[['Vendedor / cajero','servicio'],['Almacenista','almacen'],['Cocinero / ayudante de cocina','cocina'],['Mesero / bartender','servicio'],['Recepcionista / botones / concierge','servicio'],['Camarista / ama de llaves','limpieza'],['Personal de limpieza / intendencia','limpieza'],['Guía de turistas','seguridad'],['Salvavidas / guardavidas','seguridad'],['Animador / instructor deportivo','seguridad'],['Jardinero / áreas verdes','jardineria'],['Estilista / cosmetólogo','servicio'],['Técnico de reparación de equipos','electrico'],['Repartidor / mensajero','conductor']]],
+ ['08 Gestión y soporte administrativo',[['Auxiliar / asistente administrativo','admin'],['Contador / analista','admin'],['Recursos humanos','admin'],['Gerente / director','admin'],['Ejecutivo de banca o seguros','admin'],['Abogado / asesor legal','admin']]],
+ ['09 Salud y protección social',[['Médico','salud'],['Enfermero(a)','salud'],['Paramédico / técnico en urgencias médicas','salud'],['Rescatista / bombero','seguridad'],['Guardia de seguridad / vigilante','seguridad'],['Brigadista / protección civil','seguridad'],['Inspector sanitario o ambiental','admin'],['Trabajador social','admin']]],
+ ['10 Comunicación',[['Periodista / redactor','admin'],['Técnico de audio, iluminación o escenario','altura'],['Bailarín / artista escénico','seguridad'],['Acróbata / artista aéreo','altura'],['Traductor / intérprete','admin'],['Publicista / relaciones públicas','admin'],['Fotógrafo / camarógrafo','servicio']]],
+ ['11 Desarrollo y extensión del conocimiento',[['Docente / instructor','servicio'],['Capacitador en campo','servicio'],['Investigador / laboratorista','salud'],['Bibliotecario / promotor cultural','admin']]],
+];
+const jobOtro=S=>S.a.sector===OTRO||S.a.puesto_cat===OTRO;
+const profKey=S=>(PROFILES.find(p=>p[1]===S.a.perfil)||[])[0];
+// Maniobras indicadas por perfil de puesto; el perfil "otro" usa los riesgos marcados.
+const MAN_BY_PROFILE = {
+ construccion:['m_lasegue','m_schober','m_jobe','m_phalen','m_valsalva','m_romberg','m_weber'],
+ maquinaria:['m_lasegue','m_schober','m_phalen','m_romberg','m_weber'],
+ altura:['m_romberg','m_jobe','m_lasegue','m_valsalva'],
+ soldador:['m_jobe','m_phalen','m_cozen','m_lasegue','m_weber'],
+ pintor:['m_jobe','m_phalen','m_lasegue','m_romberg'],
+ electrico:['m_romberg','m_jobe','m_phalen','m_cozen','m_weber'],
+ limpieza:['m_lasegue','m_jobe','m_phalen','m_finkel','m_varices'],
+ cocina:['m_phalen','m_finkel','m_cozen','m_lasegue','m_varices'],
+ servicio:['m_lasegue','m_jobe','m_varices'],
+ conductor:['m_lasegue','m_schober','m_romberg','m_weber'],
+ almacen:['m_lasegue','m_schober','m_jobe','m_valsalva','m_phalen'],
+ admin:['m_phalen','m_finkel','m_cozen'],
+ salud:['m_lasegue','m_schober','m_jobe','m_valsalva','m_varices'],
+ seguridad:['m_romberg','m_lasegue','m_jobe','m_varices'],
+ jardineria:['m_lasegue','m_jobe','m_phalen','m_cozen','m_weber'],
+};
+
 const YN = (id, q, o = {}) => ({ id, t: 'yn', q, ...o });
 const OPT = (id, q, opts, o = {}) => ({ id, t: 'opt', q, o: opts, ...o });
 const TXT = (id, q, o = {}) => ({ id, t: 'txt', q, ...o });
@@ -581,8 +617,11 @@ const SECTIONS = [
    TXT('emergencia','En caso de accidente avisar a'),
    {id:'telefono', t:'txt', q:'Teléfono', im:'tel'},
    TXT('direccion','Dirección'),
-   TXT('puesto','Puesto de trabajo',{req:1}),
-   OPT('perfil','Perfil de riesgo del puesto', PROFILES.map(p=>p[1]), {req:1, cols:2}),
+   OPT('sector','Sector de ocupación (Catálogo Nacional de Ocupaciones, STPS)', [OTRO, ...CNO.map(c=>c[0])], {req:1, cols:2}),
+   TXT('sector_otro','Describa el sector de ocupación',{req:1, when:S=>S.a.sector===OTRO}),
+   ...CNO.map(([sec,ps])=>OPT('puesto_cat','Puesto de trabajo · '+sec.slice(3),[OTRO,...ps.map(p=>p[0])],{req:1, cols:2, when:S=>S.a.sector===sec})),
+   TXT('puesto_otro','Describa el puesto de trabajo',{req:1, when:jobOtro}),
+   OPT('perfil','Perfil de riesgo del puesto (para preseleccionar riesgos y maniobras)', PROFILES.map(p=>p[1]), {req:1, cols:2, when:jobOtro}),
    TXT('area','Área / departamento'),
    OPT('antiguedad','Antigüedad en el puesto',['Nuevo ingreso','< 1 año','1 – 5 años','5 – 10 años','> 10 años']),
    OPT('turno','Turno',['Diurno','Mixto','Nocturno','Rotativo']),
@@ -849,7 +888,7 @@ function pad(n,l=2){ return String(n).padStart(l,'0'); }
 const monthKey=()=>today().slice(0,7);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=s=>document.querySelector(s);
-function saveDraft(){ try{ localStorage.setItem('care_draft',JSON.stringify(S)); }catch(e){} }
+function saveDraft(){ if(S) S.a.puesto=(jobOtro(S)?S.a.puesto_otro:S.a.puesto_cat)||null; try{ localStorage.setItem('care_draft',JSON.stringify(S)); }catch(e){} }
 function loadDraft(){ try{ return JSON.parse(localStorage.getItem('care_draft')); }catch(e){ return null; } }
 function dropDraft(){ try{ localStorage.removeItem('care_draft'); }catch(e){} }
 
@@ -870,6 +909,7 @@ function visibleItems(sec){ const out=[]; let hdrOk=true;
     if(it.t==='h'){ hdrOk=(!it.rel||hasAny(S,it.rel))&&(!it.when||it.when(S)); if(hdrOk) out.push(it); continue; }
     if(!hdrOk) continue;
     if(it.when&&!it.when(S)) continue;
+    if(it.man){ const l=MAN_BY_PROFILE[profKey(S)]; if(l){ if(l.includes(it.id)) out.push(it); continue; } }
     if(it.rel&&!hasAny(S,it.rel)) continue;
     out.push(it); }
   return out; }
@@ -1033,7 +1073,9 @@ function keepScroll(fn){ const y=window.scrollY; fn(); window.scrollTo(0,y); }
 document.addEventListener('click',async e=>{ const b=e.target.closest('button,[data-go]'); if(!b||b.disabled) return; const d=b.dataset;
   if(d.go){ VIEW=d.go; return render(); }
   if(d.id){ S.a[d.id]=d.v;
-    if(d.id==='perfil'&&!S.chipsTouched){ const p=PROFILES.find(x=>x[1]===d.v); S.chips=p?[...p[2]]:[]; }
+    if(d.id==='sector'){ delete S.a.puesto_cat; }
+    if(d.id==='puesto_cat'&&d.v!==OTRO){ const sec=CNO.find(c=>c[0]===S.a.sector), job=sec&&sec[1].find(p=>p[0]===d.v); if(job) S.a.perfil=PROFILES.find(p=>p[0]===job[1])[1]; }
+    if((d.id==='perfil'||d.id==='puesto_cat'&&d.v!==OTRO)&&!S.chipsTouched){ const p=PROFILES.find(x=>x[1]===S.a.perfil); S.chips=p?[...p[2]]:[]; }
     saveDraft(); return keepScroll(renderExam); }
   if(d.multi){ let v=S.a[d.multi]||[]; v=d.v==='__none'?[]:(v.includes(d.v)?v.filter(x=>x!==d.v):[...v,d.v]); S.a[d.multi]=v; saveDraft(); return keepScroll(renderExam); }
   if(d.chip){ S.chipsTouched=true; S.chips=has(S,d.chip)?S.chips.filter(c=>c!==d.chip):[...S.chips,d.chip]; saveDraft(); return keepScroll(renderExam); }
@@ -1188,7 +1230,7 @@ function frame(d,r,title){ const n=d.getNumberOfPages(), a=r.data.a, lw=58, lh=l
 async function buildPdf(r){ const d=newDoc(), a=r.data.a, dd=r.data.d;
   if(r.status==='ANULADO'){ band(d,`EXPEDIENTE ANULADO — ${r.anulado.fecha.slice(0,10)} — ${r.anulado.motivo}`,C.red); d.y+=8; }
   band(d,'DATOS DEL EXAMEN'); kv(d,[['Tipo de examen',a.tipo],['Fecha',mx(a.fecha)],['Empresa',a.empresa],['Proyecto / obra',a.proyecto],['Acrónimo',a.acronimo],['Lugar de trabajo',a.lugar],['Evaluador',`${a.evaluador||''} (${a.rol||''})`],['Cédula',a.cedula],['Examen previo',a.examen_previo]]);
-  band(d,'DATOS DE IDENTIDAD'); kv(d,[['Nombre',a.nombre],['Edad',age(a.fnac)!=null?age(a.fnac)+' años':''],['Lugar y fecha de nac.',[a.lnac,mx(a.fnac)].filter(Boolean).join(' · ')],['Sexo',a.sexo],['En caso de accidente avisar a',a.emergencia],['Teléfono',a.telefono],['Dirección',a.direccion],['Escolaridad',a.escolaridad],['Puesto',a.puesto],['Perfil de riesgo',a.perfil],['Área',a.area],['Antigüedad / turno',[a.antiguedad,a.turno].filter(Boolean).join(' · ')],['Consentimiento',a.consentimiento]]);
+  band(d,'DATOS DE IDENTIDAD'); kv(d,[['Nombre',a.nombre],['Edad',age(a.fnac)!=null?age(a.fnac)+' años':''],['Lugar y fecha de nac.',[a.lnac,mx(a.fnac)].filter(Boolean).join(' · ')],['Sexo',a.sexo],['En caso de accidente avisar a',a.emergencia],['Teléfono',a.telefono],['Dirección',a.direccion],['Escolaridad',a.escolaridad],['Sector (CNO)',a.sector===OTRO?'Otro: '+(a.sector_otro||''):a.sector],['Puesto',a.puesto],['Perfil de riesgo',a.perfil],['Área',a.area],['Antigüedad / turno',[a.antiguedad,a.turno].filter(Boolean).join(' · ')],['Consentimiento',a.consentimiento]]);
   for(const sec of r.rows){ if(sec.t==='Riesgos ambientales del puesto') continue; band(d,sec.t.toUpperCase());
     const body=sec.rows.map(x=>x.h?[{content:x.h,colSpan:3,styles:{fillColor:C.lab,fontStyle:'bold',textColor:C.green}}]
       :[x.q,{content:x.a,styles:x.s>0?{fontStyle:'bold'}:{}},{content:(x.i||(x.a==='Sin respuesta'?'—':'Sin hallazgo'))+(x.s>0?`  [${SEVTXT[x.s]}]`:''),styles:x.s>0?{fillColor:SEVFILL[x.s]}:{}}]);
